@@ -1,6 +1,6 @@
 # go-lines
 
-    import "github.com/Maki-Daisuke/go-lines"
+    import lines "github.com/Maki-Daisuke/go-lines"
 
 Package lines makes it a bit easier to read lines from text files in Go.
 
@@ -14,44 +14,44 @@ lines.)
 For example, you need to write code like the following to read line from STDIN:
 
 ```go
-    import (
-      "bufio"
-      "io"
-      "os"
-    )
+import (
+  "bufio"
+  "io"
+  "os"
+)
 
-    func main(){
-      r := bufio.NewReader(os.Stdin)
-      line := ""
-      for {
-        l, isPrefix, err := r.ReadLine()
-        if err == io.EOF {
-          break
-        } else if err != nil {
-          panic(err)
-        }
-        line += l
-        if !isPrefix {
-          do_something_with(line)  // this is what really I want to do.
-          line = ""
-        }
-      }
+func main(){
+  r := bufio.NewReader(os.Stdin)
+  line := ""
+  for {
+    l, isPrefix, err := r.ReadLine()
+    if err == io.EOF {
+      break
+    } else if err != nil {
+      panic(err)
     }
+    line += l
+    if !isPrefix {
+      do_something_with(line)  // this is what really I want to do.
+      line = ""
+    }
+  }
+}
 ```
 
 With go-lines package, you can write like this:
 
 ```go
-    import (
-      "os"
-      . "github.com/Maki-Daisuke/go-lines"
-    )
+import (
+  "os"
+  . "github.com/Maki-Daisuke/go-lines"
+)
 
-    func main(){
-      for line := range Lines(os.Stdin) {
-        do_something_with(line)
-      }
-    }
+func main(){
+  for line := range Lines(os.Stdin) {
+    do_something_with(line)
+  }
+}
 ```
 
 Yay! It's much less lines of code!
@@ -60,21 +60,21 @@ Huh? How about error handling? Ok, you are not so lazy. You can use another
 function `LinesWithError`:
 
 ```go
-    import (
-      "os"
-      . "github.com/Maki-Daisuke/go-lines"
-    )
+import (
+  "os"
+  . "github.com/Maki-Daisuke/go-lines"
+)
 
-    func main(){
-      lines, errs := LinesWithError(os.Stdin)
-      for line := range lines {
-        do_something_with(line)
-      }
-      err := <-errs
-      if err != nil {
-        panic(err)
-      }
-    }
+func main(){
+  lines, errs := LinesWithError(os.Stdin)
+  for line := range lines {
+    do_something_with(line)
+  }
+  err := <-errs
+  if err != nil {
+    panic(err)
+  }
+}
 ```
 
 It's still less lines of code, isn't it?
