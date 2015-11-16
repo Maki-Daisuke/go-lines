@@ -5,7 +5,12 @@ import (
 	"io"
 )
 
-func Lines(r io.Reader) (<-chan string, <-chan error) {
+func Lines(r io.Reader) <-chan string {
+	lines, _ := LinesWithError(r)
+	return lines
+}
+
+func LinesWithError(r io.Reader) (<-chan string, <-chan error) {
 	br := bufio.NewReader(r)
 	chan_line := make(chan string, 0)
 	chan_error := make(chan error, 1)
