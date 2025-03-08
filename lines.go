@@ -79,13 +79,14 @@ package lines
 import (
 	"bufio"
 	"io"
+	"strings"
 )
 
 // `Reader` converts a `io.Reader` to a func that can be used with range
 // to iterate over lines. If an error occurs during reading, the function will panic.
 // With Go 1.23's range over func feature, you can use it like:
 //
-//	for line := range Reader(reader) {
+//	for line := range lines.Reader(reader) {
 //	  do_something_with(line)
 //	}
 func Reader(r io.Reader) func(yield func(string) bool) {
@@ -108,4 +109,15 @@ func Reader(r io.Reader) func(yield func(string) bool) {
 			}
 		}
 	}
+}
+
+// `String` takes a string and returns a func that can be used with range
+// to iterate over lines in the string. It internally uses a strings.Reader.
+// With Go 1.23's range over func feature, you can use it like:
+//
+//	for line := range lines.String(s) {
+//	  do_something_with(line)
+//	}
+func String(s string) func(yield func(string) bool) {
+	return Reader(strings.NewReader(s))
 }

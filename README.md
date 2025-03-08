@@ -100,6 +100,22 @@ for line := range Reader(reader) {
 }
 ```
 
+#### func String
+
+```go
+func String(s string) func(yield func(string) bool)
+```
+`String` takes a string and returns a func that can be used with range to iterate over 
+lines in the string. It internally uses a strings.Reader. With Go 1.23's range over func 
+feature, you can use it like:
+
+```go
+s := "line1\nline2\nline3"
+for line := range String(s) {
+  do_something_with(line)
+}
+```
+
 
 ## License
 
