@@ -5,7 +5,7 @@
 /*
 Package lines makes it a bit easier to read lines from text files in Go.
 
-Description
+# Description
 
 There are so many ways to read lines in Go! But, I wanted to write less lines of
 code as possible. I think life is too short to write lines of code to read lines.)
@@ -36,7 +36,7 @@ For example, you need to write code like the following to read line from STDIN:
 	  }
 	}
 
-With this package, you can write like this:
+With this package and Go 1.23's range over func feature, you can write like this:
 
 	import (
 	  "os"
@@ -44,29 +44,31 @@ With this package, you can write like this:
 	)
 
 	func main(){
-	  for line := range Lines(os.Stdin) {
+	  for line := range lines.Reader(os.Stdin) {
 	    do_something_with(line)
 	  }
 	}
 
-Yay! It's much less lines of code!
+Yay! It's much less lines of code and much cleaner!
 
-Huh? How about error handling? Ok, you are not so lazy. You can use another
-function `LinesWithError`:
+If an error occurs during reading, the Reader function will panic.
+If you want to handle errors, you can use a recover:
 
 	import (
+	  "fmt"
 	  "os"
 	  . "github.com/Maki-Daisuke/go-lines"
 	)
 
 	func main(){
-	  lines, errs := LinesWithError(os.Stdin)
-	  for line := range lines {
+	  defer func() {
+	    if err := recover(); err != nil {
+	        // Handle the error
+	    }
+	  }()
+
+	  for line := range lines.Reader(os.Stdin) {
 	    do_something_with(line)
-	  }
-	  err := <-errs
-	  if err != nil {
-	    panic(err)
 	  }
 	}
 
@@ -79,42 +81,31 @@ import (
 	"io"
 )
 
-// `Lines` converts a `io.Reader` to a channel that generates a line for each
-// receipt. This is actually a shorthand of LinesWithError, ignoring errors.
-func Lines(r io.Reader) <-chan string {
-	lines, _ := LinesWithError(r)
-	return lines
-}
-
-// `LinesWithError` converts a `io.Reader` to a channel that generates a line
-// for each receipt. If error occurs druing reading lines, it sends `error`
-// to channel `errs`. `errs` is sent at most one value. If there is no error,
-// `err` receives `nil`.
-func LinesWithError(r io.Reader) (lines <-chan string, err <-chan error) {
+// `Reader` converts a `io.Reader` to a func that can be used with range
+// to iterate over lines. If an error occurs during reading, the function will panic.
+// With Go 1.23's range over func feature, you can use it like:
+//
+//	for line := range Reader(reader) {
+//	  do_something_with(line)
+//	}
+func Reader(r io.Reader) func(yield func(string) bool) {
 	br := bufio.NewReader(r)
-	chan_line := make(chan string, 0)
-	chan_error := make(chan error, 1)
-	go func() {
-		defer func() {
-			close(chan_line)
-			close(chan_error)
-		}()
+	return func(yield func(string) bool) {
 		linebuf := ""
 		for {
 			line, isPrefix, err := br.ReadLine()
 			if err == io.EOF {
-				chan_error <- nil
 				return
 			} else if err != nil {
-				chan_error <- err
-				return
+				panic(err)
 			}
 			linebuf += string(line)
 			if !isPrefix {
-				chan_line <- linebuf
+				if !yield(linebuf) {
+					return
+				}
 				linebuf = ""
 			}
 		}
-	}()
-	return chan_line, chan_error
+	}
 }
